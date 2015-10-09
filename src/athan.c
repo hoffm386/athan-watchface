@@ -11,6 +11,16 @@ int second;
 int minute;
 int hour;
 
+enum {
+  KEY_SUNRISE = 0,
+  KEY_SUNSET = 1,
+  KEY_FAJR = 2,
+  KEY_DHUHR = 3,
+  KEY_ASR = 4,
+  KEY_MAGHRIB = 5,
+  KEY_ISHA = 6
+};
+
 static void update_time() {
   time_t temp = time(NULL); 
   struct tm *tick_time = localtime(&temp);
@@ -210,6 +220,51 @@ static void main_window_unload(Window *window) {
   gbitmap_destroy(stars);
 }
 
+static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
+
+  // Read first item
+  Tuple *t = dict_read_first(iterator);
+
+  // For all items
+  while(t != NULL) {
+    // Which key was received?
+    switch(t->key) {
+    case KEY_FAJR:
+      APP_LOG(APP_LOG_LEVEL_INFO, "C code received Fahr %s", t->value->cstring);
+      break;
+    case KEY_DHUHR:
+      APP_LOG(APP_LOG_LEVEL_INFO, "C code received Dhuhr %s", t->value->cstring);
+      break;
+    case KEY_ASR:
+      APP_LOG(APP_LOG_LEVEL_INFO, "C code received Asr %s", t->value->cstring);
+      break;
+    case KEY_MAGHRIB:
+      APP_LOG(APP_LOG_LEVEL_INFO, "C code received Maghrib %s", t->value->cstring);
+      break;
+    case KEY_ISHA:
+      APP_LOG(APP_LOG_LEVEL_INFO, "C code received Isha %s", t->value->cstring);
+      break;
+    default:
+      APP_LOG(APP_LOG_LEVEL_ERROR, "Key %d not recognized!", (int)t->key);
+      break;
+    }
+
+    // Look for next item
+    t = dict_read_next(iterator);
+  }
+}
+
+static void inbox_dropped_callback(AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
+}
+
+static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Outbox send failed!");
+}
+
+static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
+  APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
+}
 
 
 
@@ -232,11 +287,20 @@ static void init() {
   // Show the Window on the watch, with animated=true
   window_stack_push(s_main_window, true);
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
+
+  // Register callbacks
+  app_message_register_inbox_received(inbox_received_callback);
+  app_message_register_inbox_dropped(inbox_dropped_callback);
+  app_message_register_outbox_failed(outbox_failed_callback);
+  app_message_register_outbox_sent(outbox_sent_callback);
+
+  // Open AppMessage
+  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+
   
   // Make sure the time is displayed from the start
   update_time();
 
-  APP_LOG(APP_LOG_LEVEL_INFO, "Logging a thing from c");
 }
 
 static void deinit() {
