@@ -33,15 +33,15 @@ static void draw_circle(GContext *ctx, GRect rect, GColor color, int r, int deg)
   );  
 }
 
-static void rect_layer_update_callback(Layer *layer, GContext *ctx) {
-  const GRect rect = GRect(0, 0, 180, 180);
+static void sun_layer_update_callback(Layer *layer, GContext *ctx) {
+  const GRect rect = GRect(70, 70, 40, 40);
 
-  draw_circle(ctx, rect, GColorBlack, 90, 360);
+  draw_circle(ctx, rect, GColorBlack, 20, 360);
 }
 
 static void main_window_load(Window *window) {
   sun_layer = layer_create(GRect(0, 0, 180, 180));
-  layer_set_update_proc(sun_layer, rect_layer_update_callback);
+  layer_set_update_proc(sun_layer, sun_layer_update_callback);
   layer_add_child(window_get_root_layer(window), sun_layer);
 }
 static void main_window_unload(Window *window) {
