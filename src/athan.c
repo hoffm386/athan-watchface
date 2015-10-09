@@ -1,7 +1,7 @@
 #include <pebble.h>
 
 static Window *s_main_window;
-static Layer *layer;
+static Layer *sun_layer;
 int second;
 int minute;
 int hour;
@@ -14,7 +14,7 @@ static void update_time() {
   minute = tick_time->tm_min;
   hour = tick_time->tm_hour;
   
-  layer_mark_dirty(layer);
+  layer_mark_dirty(sun_layer);
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -35,41 +35,17 @@ static void draw_circle(GContext *ctx, GRect rect, GColor color, int r, int deg)
 
 static void rect_layer_update_callback(Layer *layer, GContext *ctx) {
   const GRect rect = GRect(0, 0, 180, 180);
-  const GRect minute_rect = GRect(60, 60, 60, 60);
-  const GRect hour_rect = GRect(75, 75, 30, 30);
 
   draw_circle(ctx, rect, GColorBlack, 90, 360);
-  
-  GColor colors[6] = {
-    GColorRed,
-    GColorOrange,
-    GColorRajah,
-    GColorMediumAquamarine,
-    GColorTiffanyBlue,
-    GColorMidnightGreen
-  };
-  
-  int i;
-  for(i = 0; i < 6; i++) {
-    draw_circle(ctx, rect, colors[i], (6 - i) * 10, (second + 1) * 6);
-  }
-  
-  draw_circle(ctx, minute_rect, GColorMidnightGreen, 30, 360);
-  draw_circle(ctx, minute_rect, GColorTiffanyBlue, 30, minute * 6);
-  draw_circle(ctx, minute_rect, GColorLightGray, 2, 360);
-  
-  draw_circle(ctx, hour_rect, GColorTiffanyBlue, 15, 360);
-  draw_circle(ctx, hour_rect, GColorMidnightGreen, 15, hour % 12 * 30);
-  draw_circle(ctx, hour_rect, GColorBlack, 2, 360);
 }
 
 static void main_window_load(Window *window) {
-  layer = layer_create(GRect(0, 0, 180, 180));
-  layer_set_update_proc(layer, rect_layer_update_callback);
-  layer_add_child(window_get_root_layer(window), layer);
+  sun_layer = layer_create(GRect(0, 0, 180, 180));
+  layer_set_update_proc(sun_layer, rect_layer_update_callback);
+  layer_add_child(window_get_root_layer(window), sun_layer);
 }
 static void main_window_unload(Window *window) {
-  layer_destroy(layer);
+  layer_destroy(sun_layer);
 }
 
 
