@@ -1,9 +1,12 @@
 #include <pebble.h>
 
 static Window *s_main_window;
+static Layer *offscreen_layer;
 static Layer *sun_layer;
-static Layer *night_layer;
+static BitmapLayer *night_layer;
 static Layer *ring_layer;
+static GBitmap *stars;
+
 int second;
 int minute;
 int hour;
@@ -32,6 +35,43 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
 
 
+static void bitmap_make_transparent_old(GBitmap *bitmap) {
+  GRect bounds = gbitmap_get_bounds(bitmap);
+  for (int y = bounds.origin.y; y < bounds.origin.y + bounds.size.h; y++) {
+    GBitmapDataRowInfo row_info = gbitmap_get_data_row_info(bitmap, y);
+    for (int x = row_info.min_x; x < row_info.max_x; x++) {
+      GColor *pixel = (GColor*)&row_info.data[x];
+      pixel->a = 0x0;
+    }
+  }
+}
+
+static void bitmap_make_transparent(GBitmap *bitmap, GBitmap *mask) {
+  GRect bounds = gbitmap_get_bounds(mask);
+  for (int y = bounds.origin.y; y < bounds.origin.y + bounds.size.h; y++) {
+    GBitmapDataRowInfo row_info = gbitmap_get_data_row_info(bitmap, y);
+    GBitmapDataRowInfo row_info_mask = gbitmap_get_data_row_info(mask, y);
+    for (int x = row_info_mask.min_x; x < row_info_mask.max_x; x++) {
+      GColor *pixel = (GColor*)&row_info.data[x];
+      GColor *pixel_mask = (GColor*)&row_info_mask.data[x];
+      if (pixel_mask->r != 0x0) {
+        pixel->a = 0x3;
+      } else {
+        pixel->a = 0x0;
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
 static void draw_circle(GContext *ctx, GRect rect, GColor color, int r, int deg) {
   graphics_context_set_fill_color(ctx, color);
   graphics_fill_radial(
@@ -43,7 +83,7 @@ static void draw_circle(GContext *ctx, GRect rect, GColor color, int r, int deg)
   );  
 }
 
-static void sun_layer_update_callback(Layer *layer, GContext *ctx) {
+static void sun_layer_update(Layer *layer, GContext *ctx) {
   const GRect entire_screen = GRect(0, 0, 180, 180);
   const GRect sun_rect = GRect(70, 70, 40, 40);
 
@@ -88,9 +128,11 @@ static void sun_layer_update_callback(Layer *layer, GContext *ctx) {
   }
 }
 
-static void night_layer_update_callback(Layer *layer, GContext *ctx) {
-  const GRect entire_screen = GRect(0, 0, 180, 180);
+static void offscreen_layer_update(Layer* layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
 
+  // Draw the night slice
+  const GRect entire_screen = GRect(0, 0, 180, 180);
   int hour_rise = 7;
   int minute_rise = 13;
   int hour_set = 18;
@@ -102,7 +144,7 @@ static void night_layer_update_callback(Layer *layer, GContext *ctx) {
   int degree_rise = (diff_rise + 180) % 360;
   int degree_set = (diff_set + 180) % 360;
 
-  graphics_context_set_fill_color(ctx, GColorOxfordBlue);
+  graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_fill_radial(
     ctx, entire_screen, 
     GOvalScaleModeFillCircle,
@@ -110,11 +152,23 @@ static void night_layer_update_callback(Layer *layer, GContext *ctx) {
     DEG_TO_TRIGANGLE(degree_set),
     DEG_TO_TRIGANGLE(degree_rise)
   );
+
+  // Capture the graphics context framebuffer
+  GBitmap *framebuffer = graphics_capture_frame_buffer(ctx);
+
+  bitmap_make_transparent(stars, framebuffer);
+
+  // Release the framebuffer now that we are free to modify it
+  graphics_release_frame_buffer(ctx, framebuffer);
 }
 
-static void ring_layer_update_callback(Layer *layer, GContext *ctx) {
+static void ring_layer_update(Layer *layer, GContext *ctx) {
   const GRect entire_screen = GRect(0, 0, 180, 180);
-  draw_circle(ctx, entire_screen, GColorWhite, 25, 360);
+  draw_circle(ctx, entire_screen, GColorWhite, 20, 360);
+  graphics_context_set_stroke_color(ctx, GColorOxfordBlue);
+  graphics_context_set_stroke_width(ctx, 10);
+
+  const GRect time_orbit = GRect(10, 10, 175, 175);
 }
 
 
@@ -127,21 +181,33 @@ static void ring_layer_update_callback(Layer *layer, GContext *ctx) {
 
 
 static void main_window_load(Window *window) {
-  sun_layer = layer_create(GRect(0, 0, 180, 180));
-  layer_set_update_proc(sun_layer, sun_layer_update_callback);
+  window_set_background_color(window, GColorBlack);
 
-  night_layer = layer_create(GRect(0, 0, 180, 180));
-  layer_set_update_proc(night_layer, night_layer_update_callback);
+  offscreen_layer = layer_create(GRect(0, 0, 180, 180));
+  layer_set_update_proc(offscreen_layer, offscreen_layer_update);
+
+  sun_layer = layer_create(GRect(0, 0, 180, 180));
+  layer_set_update_proc(sun_layer, sun_layer_update);
+
+  stars = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_STARS);
+  night_layer = bitmap_layer_create(GRect(0, 0, 180, 180));
+  bitmap_layer_set_bitmap(night_layer, stars);
+  bitmap_layer_set_compositing_mode(night_layer, GCompOpSet);
 
   ring_layer = layer_create(GRect(0, 0, 180, 180));
-  layer_set_update_proc(ring_layer, ring_layer_update_callback);
+  layer_set_update_proc(ring_layer, ring_layer_update);
 
+  layer_add_child(window_get_root_layer(window), offscreen_layer);
   layer_add_child(window_get_root_layer(window), sun_layer);
-  layer_add_child(window_get_root_layer(window), night_layer);
+  layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(night_layer));
   layer_add_child(window_get_root_layer(window), ring_layer);
 }
 static void main_window_unload(Window *window) {
+  layer_destroy(offscreen_layer);
   layer_destroy(sun_layer);
+  bitmap_layer_destroy(night_layer);
+  layer_destroy(ring_layer);
+  gbitmap_destroy(stars);
 }
 
 
