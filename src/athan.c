@@ -45,17 +45,6 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
 
 
-static void bitmap_make_transparent_old(GBitmap *bitmap) {
-  GRect bounds = gbitmap_get_bounds(bitmap);
-  for (int y = bounds.origin.y; y < bounds.origin.y + bounds.size.h; y++) {
-    GBitmapDataRowInfo row_info = gbitmap_get_data_row_info(bitmap, y);
-    for (int x = row_info.min_x; x < row_info.max_x; x++) {
-      GColor *pixel = (GColor*)&row_info.data[x];
-      pixel->a = 0x0;
-    }
-  }
-}
-
 static void bitmap_make_transparent(GBitmap *bitmap, GBitmap *mask) {
   GRect bounds = gbitmap_get_bounds(mask);
   for (int y = bounds.origin.y; y < bounds.origin.y + bounds.size.h; y++) {
@@ -220,6 +209,16 @@ static void main_window_unload(Window *window) {
   gbitmap_destroy(stars);
 }
 
+
+
+
+
+
+
+
+
+
+
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
 
   // Read first item
@@ -265,6 +264,7 @@ static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResul
 static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
   APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
 }
+
 
 
 
