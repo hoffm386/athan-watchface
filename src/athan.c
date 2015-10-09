@@ -23,7 +23,6 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
 static void draw_circle(GContext *ctx, GRect rect, GColor color, int r, int deg) {
   graphics_context_set_fill_color(ctx, color);
-  
   graphics_fill_radial(
     ctx, rect, 
     GOvalScaleModeFillCircle,
@@ -34,9 +33,46 @@ static void draw_circle(GContext *ctx, GRect rect, GColor color, int r, int deg)
 }
 
 static void sun_layer_update_callback(Layer *layer, GContext *ctx) {
-  const GRect rect = GRect(70, 70, 40, 40);
+  const GRect entire_screen = GRect(0, 0, 180, 180);
+  const GRect sun_rect = GRect(65, 65, 50, 50);
 
-  draw_circle(ctx, rect, GColorBlack, 20, 360);
+  draw_circle(ctx, sun_rect, GColorBlack, 25, 360);
+
+
+  graphics_context_set_stroke_width(ctx, 1);
+
+  int i;
+  for (i = 6; i < 360; i += 12) {
+    const GPoint in = gpoint_from_polar(
+      sun_rect,
+      GOvalScaleModeFitCircle,
+      DEG_TO_TRIGANGLE(i)
+    );
+    const GPoint out = gpoint_from_polar(
+      entire_screen,
+      GOvalScaleModeFitCircle,
+      DEG_TO_TRIGANGLE(i)
+    );
+    graphics_draw_line(ctx, out, in);
+  }
+
+  graphics_context_set_stroke_width(ctx, 2);
+
+  for (i = 0; i < 360; i += 12) {
+    const GPoint in = gpoint_from_polar(
+      sun_rect,
+      GOvalScaleModeFitCircle,
+      DEG_TO_TRIGANGLE(i)
+    );
+    const GPoint out = gpoint_from_polar(
+      entire_screen,
+      GOvalScaleModeFitCircle,
+      DEG_TO_TRIGANGLE(i)
+    );
+    graphics_draw_line(ctx, out, in);
+  }
+
+  
 }
 
 static void main_window_load(Window *window) {
