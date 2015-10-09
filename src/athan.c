@@ -2,6 +2,7 @@
 
 static Window *s_main_window;
 static Layer *sun_layer;
+static Layer *night_layer;
 int second;
 int minute;
 int hour;
@@ -20,6 +21,15 @@ static void update_time() {
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_time();
 }
+
+
+
+
+
+
+
+
+
 
 static void draw_circle(GContext *ctx, GRect rect, GColor color, int r, int deg) {
   graphics_context_set_fill_color(ctx, color);
@@ -75,18 +85,62 @@ static void sun_layer_update_callback(Layer *layer, GContext *ctx) {
     );
     graphics_draw_line(ctx, out, in);
   }
-
-  
 }
+
+static void night_layer_update_callback(Layer *layer, GContext *ctx) {
+  const GRect entire_screen = GRect(0, 0, 180, 180);
+
+  int hour_rise = 7;
+  int minute_rise = 13;
+  int hour_set = 18;
+  int minute_set = 40;
+
+  int diff_rise = ((hour_rise * 60) + minute_rise) * 360 / 1440;
+  int diff_set = ((hour_set * 60) + minute_set) * 360 / 1440;
+
+  int degree_rise = (diff_rise + 180) % 360;
+  int degree_set = (diff_set + 180) % 360;
+
+  graphics_context_set_fill_color(ctx, GColorOxfordBlue);
+  graphics_fill_radial(
+    ctx, entire_screen, 
+    GOvalScaleModeFillCircle,
+    90,
+    DEG_TO_TRIGANGLE(degree_set),
+    DEG_TO_TRIGANGLE(degree_rise)
+  );
+}
+
+
+
+
+
+
+
+
+
 
 static void main_window_load(Window *window) {
   sun_layer = layer_create(GRect(0, 0, 180, 180));
   layer_set_update_proc(sun_layer, sun_layer_update_callback);
+
+  night_layer = layer_create(GRect(0, 0, 180, 180));
+  layer_set_update_proc(night_layer, night_layer_update_callback);
+
   layer_add_child(window_get_root_layer(window), sun_layer);
+  layer_add_child(window_get_root_layer(window), night_layer);
 }
 static void main_window_unload(Window *window) {
   layer_destroy(sun_layer);
 }
+
+
+
+
+
+
+
+
 
 
 static void init() {
