@@ -1,13 +1,13 @@
 {
   "uuid": "8e07f8c1-e7d0-44cf-8261-a92b10772182",
-  "shortName": "athan",
-  "longName": "athan",
-  "companyName": "MakeAwesomeHappen",
+  "shortName": "Athan",
+  "longName": "Athan",
+  "companyName": "Cerin",
   "versionLabel": "1.0",
   "sdkVersion": "3",
-  "targetPlatforms": ["aplite", "basalt", "chalk"],
+  "targetPlatforms": ["chalk"],
   "watchapp": {
-    "watchface": false
+    "watchface": true
   },
   "appKeys": {
     "dummy": 0

@@ -1,60 +1,103 @@
 #include <pebble.h>
 
-static Window *window;
-static TextLayer *text_layer;
+static Window *s_main_window;
+static Layer *layer;
+int second;
+int minute;
+int hour;
 
-static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(text_layer, "Select");
+static void update_time() {
+  time_t temp = time(NULL); 
+  struct tm *tick_time = localtime(&temp);
+  
+  second = tick_time->tm_sec;
+  minute = tick_time->tm_min;
+  hour = tick_time->tm_hour;
+  
+  layer_mark_dirty(layer);
 }
 
-static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(text_layer, "Up");
+static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+  update_time();
 }
 
-static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(text_layer, "Down");
+static void draw_circle(GContext *ctx, GRect rect, GColor color, int r, int deg) {
+  graphics_context_set_fill_color(ctx, color);
+  
+  graphics_fill_radial(
+    ctx, rect, 
+    GOvalScaleModeFillCircle,
+    r,
+    DEG_TO_TRIGANGLE(0),
+    deg % 360 == 0 ? TRIG_MAX_ANGLE : DEG_TO_TRIGANGLE(deg)
+  );  
 }
 
-static void click_config_provider(void *context) {
-  window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
-  window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
-  window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
+static void rect_layer_update_callback(Layer *layer, GContext *ctx) {
+  const GRect rect = GRect(0, 0, 180, 180);
+  const GRect minute_rect = GRect(60, 60, 60, 60);
+  const GRect hour_rect = GRect(75, 75, 30, 30);
+
+  draw_circle(ctx, rect, GColorBlack, 90, 360);
+  
+  GColor colors[6] = {
+    GColorRed,
+    GColorOrange,
+    GColorRajah,
+    GColorMediumAquamarine,
+    GColorTiffanyBlue,
+    GColorMidnightGreen
+  };
+  
+  int i;
+  for(i = 0; i < 6; i++) {
+    draw_circle(ctx, rect, colors[i], (6 - i) * 10, (second + 1) * 6);
+  }
+  
+  draw_circle(ctx, minute_rect, GColorMidnightGreen, 30, 360);
+  draw_circle(ctx, minute_rect, GColorTiffanyBlue, 30, minute * 6);
+  draw_circle(ctx, minute_rect, GColorLightGray, 2, 360);
+  
+  draw_circle(ctx, hour_rect, GColorTiffanyBlue, 15, 360);
+  draw_circle(ctx, hour_rect, GColorMidnightGreen, 15, hour % 12 * 30);
+  draw_circle(ctx, hour_rect, GColorBlack, 2, 360);
 }
 
-static void window_load(Window *window) {
-  Layer *window_layer = window_get_root_layer(window);
-  GRect bounds = layer_get_bounds(window_layer);
-
-  text_layer = text_layer_create((GRect) { .origin = { 0, 72 }, .size = { bounds.size.w, 20 } });
-  text_layer_set_text(text_layer, "Press a button");
-  text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
-  layer_add_child(window_layer, text_layer_get_layer(text_layer));
+static void main_window_load(Window *window) {
+  layer = layer_create(GRect(0, 0, 180, 180));
+  layer_set_update_proc(layer, rect_layer_update_callback);
+  layer_add_child(window_get_root_layer(window), layer);
+}
+static void main_window_unload(Window *window) {
+  layer_destroy(layer);
 }
 
-static void window_unload(Window *window) {
-  text_layer_destroy(text_layer);
-}
 
-static void init(void) {
-  window = window_create();
-  window_set_click_config_provider(window, click_config_provider);
-  window_set_window_handlers(window, (WindowHandlers) {
-    .load = window_load,
-    .unload = window_unload,
+static void init() {
+  // Create main Window element and assign to pointer
+  s_main_window = window_create();
+
+  // Set handlers to manage the elements inside the Window
+  window_set_window_handlers(s_main_window, (WindowHandlers) {
+    .load = main_window_load,
+    .unload = main_window_unload
   });
-  const bool animated = true;
-  window_stack_push(window, animated);
+
+  // Show the Window on the watch, with animated=true
+  window_stack_push(s_main_window, true);
+  tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
+  
+  // Make sure the time is displayed from the start
+  update_time();
 }
 
-static void deinit(void) {
-  window_destroy(window);
+static void deinit() {
+  // Destroy Window
+  window_destroy(s_main_window);
 }
 
 int main(void) {
   init();
-
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Done initializing, pushed window: %p", window);
-
   app_event_loop();
   deinit();
 }
