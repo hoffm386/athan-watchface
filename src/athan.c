@@ -3,6 +3,7 @@
 static Window *s_main_window;
 static Layer *sun_layer;
 static Layer *night_layer;
+static Layer *ring_layer;
 int second;
 int minute;
 int hour;
@@ -15,7 +16,7 @@ static void update_time() {
   minute = tick_time->tm_min;
   hour = tick_time->tm_hour;
   
-  layer_mark_dirty(sun_layer);
+  //layer_mark_dirty(sun_layer);
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -44,11 +45,11 @@ static void draw_circle(GContext *ctx, GRect rect, GColor color, int r, int deg)
 
 static void sun_layer_update_callback(Layer *layer, GContext *ctx) {
   const GRect entire_screen = GRect(0, 0, 180, 180);
-  const GRect sun_rect = GRect(65, 65, 50, 50);
+  const GRect sun_rect = GRect(70, 70, 40, 40);
 
 
   draw_circle(ctx, entire_screen, GColorCeleste, 90, 360);
-  draw_circle(ctx, sun_rect, GColorOrange, 25, 360);
+  draw_circle(ctx, sun_rect, GColorOrange, 20, 360);
 
 
   graphics_context_set_stroke_color(ctx, GColorOrange);
@@ -111,6 +112,11 @@ static void night_layer_update_callback(Layer *layer, GContext *ctx) {
   );
 }
 
+static void ring_layer_update_callback(Layer *layer, GContext *ctx) {
+  const GRect entire_screen = GRect(0, 0, 180, 180);
+  draw_circle(ctx, entire_screen, GColorWhite, 25, 360);
+}
+
 
 
 
@@ -127,8 +133,12 @@ static void main_window_load(Window *window) {
   night_layer = layer_create(GRect(0, 0, 180, 180));
   layer_set_update_proc(night_layer, night_layer_update_callback);
 
+  ring_layer = layer_create(GRect(0, 0, 180, 180));
+  layer_set_update_proc(ring_layer, ring_layer_update_callback);
+
   layer_add_child(window_get_root_layer(window), sun_layer);
   layer_add_child(window_get_root_layer(window), night_layer);
+  layer_add_child(window_get_root_layer(window), ring_layer);
 }
 static void main_window_unload(Window *window) {
   layer_destroy(sun_layer);
