@@ -105,6 +105,8 @@ static void init() {
   
   // Make sure the time is displayed from the start
   update_time();
+
+  APP_LOG(APP_LOG_LEVEL_INFO, "Logging a thing from c");
 }
 
 static void deinit() {
