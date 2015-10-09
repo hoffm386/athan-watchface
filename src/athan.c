@@ -36,9 +36,12 @@ static void sun_layer_update_callback(Layer *layer, GContext *ctx) {
   const GRect entire_screen = GRect(0, 0, 180, 180);
   const GRect sun_rect = GRect(65, 65, 50, 50);
 
-  draw_circle(ctx, sun_rect, GColorBlack, 25, 360);
+
+  draw_circle(ctx, entire_screen, GColorCeleste, 90, 360);
+  draw_circle(ctx, sun_rect, GColorOrange, 25, 360);
 
 
+  graphics_context_set_stroke_color(ctx, GColorOrange);
   graphics_context_set_stroke_width(ctx, 1);
 
   int i;
@@ -56,6 +59,7 @@ static void sun_layer_update_callback(Layer *layer, GContext *ctx) {
     graphics_draw_line(ctx, out, in);
   }
 
+  graphics_context_set_stroke_color(ctx, GColorChromeYellow);
   graphics_context_set_stroke_width(ctx, 2);
 
   for (i = 0; i < 360; i += 12) {
