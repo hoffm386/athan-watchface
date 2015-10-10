@@ -14,11 +14,7 @@ int hour;
 enum {
   KEY_SUNRISE = 0,
   KEY_SUNSET = 1,
-  KEY_FAJR = 2,
-  KEY_DHUHR = 3,
-  KEY_ASR = 4,
-  KEY_MAGHRIB = 5,
-  KEY_ISHA = 6
+  KEY_PRAYER_TIMES = 2
 };
 
 static void update_time() {
@@ -228,24 +224,18 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   while(t != NULL) {
     // Which key was received?
     switch(t->key) {
-    case KEY_FAJR:
-      APP_LOG(APP_LOG_LEVEL_INFO, "C code received Fahr %s", t->value->cstring);
-      break;
-    case KEY_DHUHR:
-      APP_LOG(APP_LOG_LEVEL_INFO, "C code received Dhuhr %s", t->value->cstring);
-      break;
-    case KEY_ASR:
-      APP_LOG(APP_LOG_LEVEL_INFO, "C code received Asr %s", t->value->cstring);
-      break;
-    case KEY_MAGHRIB:
-      APP_LOG(APP_LOG_LEVEL_INFO, "C code received Maghrib %s", t->value->cstring);
-      break;
-    case KEY_ISHA:
-      APP_LOG(APP_LOG_LEVEL_INFO, "C code received Isha %s", t->value->cstring);
-      break;
-    default:
-      APP_LOG(APP_LOG_LEVEL_ERROR, "Key %d not recognized!", (int)t->key);
-      break;
+      case KEY_SUNRISE:
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received sunrise %s", t->value->cstring);
+        break;
+      case KEY_SUNSET:
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received sunset %s", t->value->cstring);
+        break;
+      case KEY_PRAYER_TIMES:
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received prayer times %s", t->value->cstring);
+        break;
+      default:
+        APP_LOG(APP_LOG_LEVEL_ERROR, "Key %d not recognized!", (int)t->key);
+        break;
     }
 
     // Look for next item

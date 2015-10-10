@@ -12,11 +12,7 @@
   "appKeys": {
     "KEY_SUNRISE": 0,
     "KEY_SUNSET": 1,
-    "KEY_FAJR": 2,
-    "KEY_DHUHR": 3,
-    "KEY_ASR": 4,
-    "KEY_MAGHRIB": 5,
-    "KEY_ISHA": 6
+    "KEY_PRAYER_TIMES": 2
   },
   "resources": {
     "media": [
