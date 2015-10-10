@@ -13,6 +13,9 @@ static GBitmap *stars;
 static GBitmap *sun;
 static GBitmap *moon;
 
+bool loaded_prayers;
+bool loaded_sun_data;
+
 int second;
 int minute;
 int hour;
@@ -37,6 +40,27 @@ static void update_time() {
   second = tick_time->tm_sec;
   minute = tick_time->tm_min;
   hour = tick_time->tm_hour;
+
+  int hour_fajr = 6;
+  int minute_fajr = 0;
+  int hour_dhuhr = 12;
+  int minute_dhuhr = 56;
+  int hour_asr = 16;
+  int minute_asr = 11;
+  int hour_maghrib = 18;
+  int minute_maghrib = 46;
+  int hour_isha = 22;
+  int minute_isha = 45;
+
+  if ( (hour == hour_fajr && minute == minute_fajr) ||
+    (hour == hour_dhuhr && minute == minute_dhuhr) ||
+    (hour == hour_asr && minute == minute_asr) ||
+    (hour == hour_maghrib && minute == minute_maghrib) ||
+    (hour == hour_isha && minute == minute_isha)) {
+    vibes_long_pulse();
+  }
+
+  
 
   // Create a long-lived buffer
   static char buffer[] = "00:00";
@@ -112,134 +136,140 @@ static int degreeify(int hour, int minute) {
 }
 
 static void sun_layer_update(Layer *layer, GContext *ctx) {
-  const GRect entire_screen = GRect(0, 0, 180, 180);
-  const GRect sun_outline_rect = GRect(70, 70, 40, 40);
-  const GRect sun_rect = GRect(72, 72, 36, 36);
+  if (loaded_prayers && loaded_sun_data) {
+    const GRect entire_screen = GRect(0, 0, 180, 180);
+    const GRect sun_outline_rect = GRect(70, 70, 40, 40);
+    const GRect sun_rect = GRect(72, 72, 36, 36);
 
-  draw_circle(ctx, entire_screen, GColorVividCerulean, 90, 360);
+    draw_circle(ctx, entire_screen, GColorVividCerulean, 90, 360);
 
-  graphics_context_set_stroke_color(ctx, GColorChromeYellow);
-  graphics_context_set_stroke_width(ctx, 2);
+    graphics_context_set_stroke_color(ctx, GColorChromeYellow);
+    graphics_context_set_stroke_width(ctx, 2);
 
-  int i;
-  for (i = 0; i < 360; i += 12) {
-    const GPoint in = gpoint_from_polar(
-      sun_outline_rect,
-      GOvalScaleModeFitCircle,
-      DEG_TO_TRIGANGLE(i)
-    );
-    const GPoint out = gpoint_from_polar(
-      entire_screen,
-      GOvalScaleModeFitCircle,
-      DEG_TO_TRIGANGLE(i)
-    );
-    graphics_draw_line(ctx, out, in);
+    int i;
+    for (i = 0; i < 360; i += 12) {
+      const GPoint in = gpoint_from_polar(
+        sun_outline_rect,
+        GOvalScaleModeFitCircle,
+        DEG_TO_TRIGANGLE(i)
+      );
+      const GPoint out = gpoint_from_polar(
+        entire_screen,
+        GOvalScaleModeFitCircle,
+        DEG_TO_TRIGANGLE(i)
+      );
+      graphics_draw_line(ctx, out, in);
+    }
+
+    draw_circle(ctx, sun_outline_rect, GColorWindsorTan, 20, 360);
+    draw_circle(ctx, sun_rect, GColorOrange, 18, 360);
   }
-
-  draw_circle(ctx, sun_outline_rect, GColorWindsorTan, 20, 360);
-  draw_circle(ctx, sun_rect, GColorOrange, 18, 360);
 }
 
 static void offscreen_layer_update(Layer* layer, GContext *ctx) {
-  GRect bounds = layer_get_bounds(layer);
+  if (loaded_prayers && loaded_sun_data) {
+    GRect bounds = layer_get_bounds(layer);
 
-  // Draw the night slice
-  const GRect entire_screen = GRect(0, 0, 180, 180);
+    // Draw the night slice
+    const GRect entire_screen = GRect(0, 0, 180, 180);
 
-  graphics_context_set_fill_color(ctx, GColorWhite);
-  graphics_fill_radial(
-    ctx, entire_screen, 
-    GOvalScaleModeFillCircle,
-    90,
-    DEG_TO_TRIGANGLE(degreeify(hour_set, minute_set)),
-    DEG_TO_TRIGANGLE(degreeify(hour_rise, minute_rise))
-  );
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_fill_radial(
+      ctx, entire_screen, 
+      GOvalScaleModeFillCircle,
+      90,
+      DEG_TO_TRIGANGLE(degreeify(hour_set, minute_set)),
+      DEG_TO_TRIGANGLE(degreeify(hour_rise, minute_rise))
+    );
 
-  // Capture the graphics context framebuffer
-  GBitmap *framebuffer = graphics_capture_frame_buffer(ctx);
+    // Capture the graphics context framebuffer
+    GBitmap *framebuffer = graphics_capture_frame_buffer(ctx);
 
-  bitmap_make_transparent(stars, framebuffer);
+    bitmap_make_transparent(stars, framebuffer);
 
-  // Release the framebuffer now that we are free to modify it
-  graphics_release_frame_buffer(ctx, framebuffer);
+    // Release the framebuffer now that we are free to modify it
+    graphics_release_frame_buffer(ctx, framebuffer);
+  }
 }
 
 static void prayer_layer_update(Layer *layer, GContext *ctx) {
-  const GRect time_orbit = GRect(10, 10, 160, 160);
+  if (loaded_prayers && loaded_sun_data) {
+    const GRect time_orbit = GRect(10, 10, 160, 160);
 
-  int degree_rise = degreeify(hour_rise, minute_rise);
-  int degree_set = degreeify(hour_set, minute_set);
+    int degree_rise = degreeify(hour_rise, minute_rise);
+    int degree_set = degreeify(hour_set, minute_set);
 
-  int hour_fajr = 6;
-  int minute_fajr = 0;
-  int hour_dhuhr = 12;
-  int minute_dhuhr = 56;
-  int hour_asr = 16;
-  int minute_asr = 11;
-  int hour_maghrib = 18;
-  int minute_maghrib = 46;
-  int hour_isha = 19;
-  int minute_isha = 53;
+    int hour_fajr = 6;
+    int minute_fajr = 0;
+    int hour_dhuhr = 12;
+    int minute_dhuhr = 56;
+    int hour_asr = 16;
+    int minute_asr = 11;
+    int hour_maghrib = 18;
+    int minute_maghrib = 46;
+    int hour_isha = 22;
+    int minute_isha = 45;
 
-  int degrees[5] = {
-    degreeify(hour_fajr, minute_fajr),
-    degreeify(hour_dhuhr, minute_dhuhr),
-    degreeify(hour_asr, minute_asr),
-    degreeify(hour_maghrib, minute_maghrib),
-    degreeify(hour_isha, minute_isha)
-  };
+    int degrees[5] = {
+      degreeify(hour_fajr, minute_fajr),
+      degreeify(hour_dhuhr, minute_dhuhr),
+      degreeify(hour_asr, minute_asr),
+      degreeify(hour_maghrib, minute_maghrib),
+      degreeify(hour_isha, minute_isha)
+    };
 
-  int i;
-  for (i = 0; i < 5; i++) {
-    graphics_context_set_fill_color(
-      ctx,
-      degrees[i] >= degree_set && degrees[i] <= degree_rise ? GColorOxfordBlue : GColorVividCerulean
-    );
+    int i;
+    for (i = 0; i < 5; i++) {
+      graphics_context_set_fill_color(
+        ctx,
+        degrees[i] >= degree_set && degrees[i] <= degree_rise ? GColorOxfordBlue : GColorVividCerulean
+      );
 
-    const GRect space = grect_centered_from_polar(
-      time_orbit,
-      GOvalScaleModeFitCircle,
-      DEG_TO_TRIGANGLE(degrees[i]),
-      GSize(6, 6)
-    );
+      const GRect space = grect_centered_from_polar(
+        time_orbit,
+        GOvalScaleModeFitCircle,
+        DEG_TO_TRIGANGLE(degrees[i]),
+        GSize(6, 6)
+      );
 
-    graphics_fill_radial(
-      ctx, space, 
-      GOvalScaleModeFillCircle,
-      3,
-      DEG_TO_TRIGANGLE(0),
-      TRIG_MAX_ANGLE
-    ); 
+      graphics_fill_radial(
+        ctx, space, 
+        GOvalScaleModeFillCircle,
+        3,
+        DEG_TO_TRIGANGLE(0),
+        TRIG_MAX_ANGLE
+      ); 
+    }
+
+    graphics_context_set_fill_color(ctx, GColorOxfordBlue);
   }
-
-  graphics_context_set_fill_color(ctx, GColorOxfordBlue);
-  
-   
 }
 
 static void ring_layer_update(Layer *layer, GContext *ctx) {
-  const GRect entire_screen = GRect(0, 0, 180, 180);
-  draw_circle(ctx, entire_screen, GColorWhite, 20, 360);
-  graphics_context_set_stroke_color(ctx, GColorOxfordBlue);
-  graphics_context_set_stroke_width(ctx, 10);
+  if (loaded_prayers && loaded_sun_data) {
+    const GRect entire_screen = GRect(0, 0, 180, 180);
+    draw_circle(ctx, entire_screen, GColorWhite, 20, 360);
+    graphics_context_set_stroke_color(ctx, GColorOxfordBlue);
+    graphics_context_set_stroke_width(ctx, 10);
 
-  const GRect time_orbit = GRect(10, 10, 160, 160);
+    const GRect time_orbit = GRect(10, 10, 160, 160);
 
-  int degree_icon = degreeify(hour, minute);
-  int degree_rise = degreeify(hour_rise, minute_rise);
-  int degree_set = degreeify(hour_set, minute_set);
-  
-  GBitmap *icon = degree_icon >= degree_set && degree_icon <= degree_rise ? moon : sun;
+    int degree_icon = degreeify(hour, minute);
+    int degree_rise = degreeify(hour_rise, minute_rise);
+    int degree_set = degreeify(hour_set, minute_set);
+    
+    GBitmap *icon = degree_icon >= degree_set && degree_icon <= degree_rise ? moon : sun;
 
-  const GRect icon_space = grect_centered_from_polar(
-    time_orbit,
-    GOvalScaleModeFitCircle,
-    DEG_TO_TRIGANGLE(degree_icon),
-    GSize(18, 18)
-  );
+    const GRect icon_space = grect_centered_from_polar(
+      time_orbit,
+      GOvalScaleModeFitCircle,
+      DEG_TO_TRIGANGLE(degree_icon),
+      GSize(18, 18)
+    );
 
-  graphics_context_set_compositing_mode(ctx, GCompOpSet);
-  graphics_draw_bitmap_in_rect(ctx, icon, icon_space);
+    graphics_context_set_compositing_mode(ctx, GCompOpSet);
+    graphics_draw_bitmap_in_rect(ctx, icon, icon_space);
+  }
 }
 
 
@@ -320,21 +350,26 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       case KEY_SUNRISE_HOUR:
         hour_rise = (int)t->value->int32;
         APP_LOG(APP_LOG_LEVEL_INFO, "C code received sunrise hour %d", hour_rise);
+        loaded_sun_data = true;
         break;
       case KEY_SUNRISE_MINUTE:
         minute_rise = (int)t->value->int32;
         APP_LOG(APP_LOG_LEVEL_INFO, "C code received sunrise minute %d", minute_rise);
+        loaded_sun_data = true;
         break;
       case KEY_SUNSET_HOUR:
         hour_set = (int)t->value->int32;
         APP_LOG(APP_LOG_LEVEL_INFO, "C code received sunset hour %d", hour_set);
+        loaded_sun_data = true;
         break;
       case KEY_SUNSET_MINUTE:
         minute_set = (int)t->value->int32;
         APP_LOG(APP_LOG_LEVEL_INFO, "C code received sunset hour %d", minute_set);
+        loaded_sun_data = true;
         break;
       case KEY_PRAYER_TIMES:
         APP_LOG(APP_LOG_LEVEL_INFO, "C code received prayer times %s", t->value->cstring);
+        loaded_prayers = true;
         break;
       default:
         APP_LOG(APP_LOG_LEVEL_ERROR, "Key %d not recognized!", (int)t->key);
@@ -344,7 +379,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     // Look for next item
     t = dict_read_next(iterator);
   }
-  layer_mark_dirty(sun_layer);
+  layer_mark_dirty(ring_layer);
 }
 
 static void inbox_dropped_callback(AppMessageResult reason, void *context) {
@@ -369,6 +404,9 @@ static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
 
 
 static void init() {
+  loaded_prayers = false;
+  loaded_sun_data = false;
+
   // Create main Window element and assign to pointer
   main_window = window_create();
 
