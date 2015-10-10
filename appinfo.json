@@ -20,6 +20,16 @@
         "type": "raw",
         "name": "IMAGE_STARS",
         "file": "images/starry-night.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_SUN",
+        "file": "images/sun.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_MOON",
+        "file": "images/moon.png"
       }
     ]
   },
