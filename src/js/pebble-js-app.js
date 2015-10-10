@@ -61,13 +61,24 @@ function sunriseSunsetAPISuccess(responseText) {
 	var json = JSON.parse(responseText);
 
 	var sunrise = json.results.sunrise;
-	console.log('JS received sunrise ' + sunrise);
+	var sunriseLocal = new Date(sunrise);
+	console.log('JS received sunrise ' + sunriseLocal);
+	var sunriseHour = sunriseLocal.getHours();
+	var sunriseMinute = sunriseLocal.getMinutes();
+
 	var sunset = json.results.sunset;
-	console.log('JS received sunset ' + sunset);
+	var sunsetLocal = new Date(sunset);
+	console.log('JS received sunset ' + sunsetLocal);
+	var sunsetHour = sunsetLocal.getHours();
+	var sunsetMinute = sunsetLocal.getMinutes();
+
+	
 
 	var dictionary = {
-		'KEY_SUNRISE': sunrise,
-		'KEY_SUNSET': sunset
+		'KEY_SUNRISE_HOUR': sunriseHour,
+		'KEY_SUNRISE_MINUTE': sunriseMinute,
+		'KEY_SUNSET_HOUR': sunsetHour,
+		'KEY_SUNSET_MINUTE': sunsetMinute
 	};
 
 	// Send to Pebble (C code)
@@ -98,7 +109,7 @@ function locationSuccess(pos) {
   	// Send request to MuslimSalat
   	xhrRequest(prayerTimeUrl, 'GET', prayerTimeAPISuccess, APIFailure, "Prayer time");
 
-  	var sunriseSunsetUrl = 'http://api.sunrise-sunset.org/json?lat='+lat+'&lng='+lon;
+  	var sunriseSunsetUrl = 'http://api.sunrise-sunset.org/json?lat='+lat+'&lng='+lon+'&formatted=0';
   	// Send request to sunrise-sunset.org
   	xhrRequest(sunriseSunsetUrl, 'GET', sunriseSunsetAPISuccess, APIFailure, "Sunrise/sunset");
 

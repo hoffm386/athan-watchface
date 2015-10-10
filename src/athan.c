@@ -14,10 +14,17 @@ int second;
 int minute;
 int hour;
 
+int hour_rise;
+int minute_rise;
+int hour_set;
+int minute_set;
+
 enum {
-  KEY_SUNRISE = 0,
-  KEY_SUNSET = 1,
-  KEY_PRAYER_TIMES = 2
+  KEY_SUNRISE_HOUR = 0,
+  KEY_SUNRISE_MINUTE = 1,
+  KEY_SUNSET_HOUR = 2,
+  KEY_SUNSET_MINUTE = 3,
+  KEY_PRAYER_TIMES = 4
 };
 
 static void update_time() {
@@ -147,10 +154,6 @@ static void offscreen_layer_update(Layer* layer, GContext *ctx) {
 
   // Draw the night slice
   const GRect entire_screen = GRect(0, 0, 180, 180);
-  int hour_rise = 7;
-  int minute_rise = 13;
-  int hour_set = 18;
-  int minute_set = 40;
 
   int diff_rise = ((hour_rise * 60) + minute_rise) * 360 / 1440;
   int diff_set = ((hour_set * 60) + minute_set) * 360 / 1440;
@@ -280,11 +283,21 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   while(t != NULL) {
     // Which key was received?
     switch(t->key) {
-      case KEY_SUNRISE:
-        APP_LOG(APP_LOG_LEVEL_INFO, "C code received sunrise %s", t->value->cstring);
+      case KEY_SUNRISE_HOUR:
+        hour_rise = (int)t->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received sunrise hour %d", hour_rise);
         break;
-      case KEY_SUNSET:
-        APP_LOG(APP_LOG_LEVEL_INFO, "C code received sunset %s", t->value->cstring);
+      case KEY_SUNRISE_MINUTE:
+        minute_rise = (int)t->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received sunrise minute %d", minute_rise);
+        break;
+      case KEY_SUNSET_HOUR:
+        hour_set = (int)t->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received sunset hour %d", hour_set);
+        break;
+      case KEY_SUNSET_MINUTE:
+        minute_set = (int)t->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received sunset hour %d", minute_set);
         break;
       case KEY_PRAYER_TIMES:
         APP_LOG(APP_LOG_LEVEL_INFO, "C code received prayer times %s", t->value->cstring);
@@ -297,6 +310,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     // Look for next item
     t = dict_read_next(iterator);
   }
+  layer_mark_dirty(sun_layer);
 }
 
 static void inbox_dropped_callback(AppMessageResult reason, void *context) {

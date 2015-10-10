@@ -10,9 +10,11 @@
     "watchface": true
   },
   "appKeys": {
-    "KEY_SUNRISE": 0,
-    "KEY_SUNSET": 1,
-    "KEY_PRAYER_TIMES": 2
+    "KEY_SUNRISE_HOUR": 0,
+    "KEY_SUNRISE_MINUTE": 1,
+    "KEY_SUNSET_HOUR": 2,
+    "KEY_SUNSET_MINUTE": 3,
+    "KEY_PRAYER_TIMES": 4
   },
   "resources": {
     "media": [
