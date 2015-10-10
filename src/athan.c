@@ -167,11 +167,6 @@ static void offscreen_layer_update(Layer* layer, GContext *ctx) {
 static void prayer_layer_update(Layer *layer, GContext *ctx) {
   const GRect time_orbit = GRect(10, 10, 160, 160);
 
-  int hour_rise = 7;
-  int minute_rise = 13;
-  int hour_set = 18;
-  int minute_set = 40;
-
   int degree_rise = degreeify(hour_rise, minute_rise);
   int degree_set = degreeify(hour_set, minute_set);
 
@@ -229,11 +224,6 @@ static void ring_layer_update(Layer *layer, GContext *ctx) {
   graphics_context_set_stroke_width(ctx, 10);
 
   const GRect time_orbit = GRect(10, 10, 160, 160);
-
-  int hour_rise = 7;
-  int minute_rise = 13;
-  int hour_set = 18;
-  int minute_set = 40;
 
   int degree_icon = degreeify(hour, minute);
   int degree_rise = degreeify(hour_rise, minute_rise);
