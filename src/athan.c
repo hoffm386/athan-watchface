@@ -86,7 +86,7 @@ static void sun_layer_update(Layer *layer, GContext *ctx) {
   const GRect sun_rect = GRect(72, 72, 36, 36);
 
 
-  draw_circle(ctx, entire_screen, GColorCeleste, 90, 360);
+  draw_circle(ctx, entire_screen, GColorVividCerulean, 90, 360);
 
   graphics_context_set_stroke_color(ctx, GColorOrange);
   graphics_context_set_stroke_width(ctx, 1);
