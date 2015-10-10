@@ -1,11 +1,14 @@
 #include <pebble.h>
 
-static Window *s_main_window;
+static Window *main_window;
+
 static Layer *offscreen_layer;
 static Layer *sun_layer;
 static BitmapLayer *night_layer;
 static TextLayer *time_layer;
+static Layer *prayer_layer;
 static Layer *ring_layer;
+
 static GBitmap *stars;
 static GBitmap *sun;
 static GBitmap *moon;
@@ -102,35 +105,23 @@ static void draw_circle(GContext *ctx, GRect rect, GColor color, int r, int deg)
   );  
 }
 
+static int degreeify(int hour, int minute) {
+  int diff = ((hour * 60) + minute) * 360 / 1440;
+  int degree = (diff + 180) % 360;
+  return degree;
+}
+
 static void sun_layer_update(Layer *layer, GContext *ctx) {
   const GRect entire_screen = GRect(0, 0, 180, 180);
   const GRect sun_outline_rect = GRect(70, 70, 40, 40);
   const GRect sun_rect = GRect(72, 72, 36, 36);
 
-
   draw_circle(ctx, entire_screen, GColorVividCerulean, 90, 360);
-
-  graphics_context_set_stroke_color(ctx, GColorOrange);
-  graphics_context_set_stroke_width(ctx, 1);
-
-  int i;
-  for (i = 6; i < 360; i += 12) {
-    const GPoint in = gpoint_from_polar(
-      sun_outline_rect,
-      GOvalScaleModeFitCircle,
-      DEG_TO_TRIGANGLE(i)
-    );
-    const GPoint out = gpoint_from_polar(
-      entire_screen,
-      GOvalScaleModeFitCircle,
-      DEG_TO_TRIGANGLE(i)
-    );
-    graphics_draw_line(ctx, out, in);
-  }
 
   graphics_context_set_stroke_color(ctx, GColorChromeYellow);
   graphics_context_set_stroke_width(ctx, 2);
 
+  int i;
   for (i = 0; i < 360; i += 12) {
     const GPoint in = gpoint_from_polar(
       sun_outline_rect,
@@ -155,19 +146,13 @@ static void offscreen_layer_update(Layer* layer, GContext *ctx) {
   // Draw the night slice
   const GRect entire_screen = GRect(0, 0, 180, 180);
 
-  int diff_rise = ((hour_rise * 60) + minute_rise) * 360 / 1440;
-  int diff_set = ((hour_set * 60) + minute_set) * 360 / 1440;
-
-  int degree_rise = (diff_rise + 180) % 360;
-  int degree_set = (diff_set + 180) % 360;
-
   graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_fill_radial(
     ctx, entire_screen, 
     GOvalScaleModeFillCircle,
     90,
-    DEG_TO_TRIGANGLE(degree_set),
-    DEG_TO_TRIGANGLE(degree_rise)
+    DEG_TO_TRIGANGLE(degreeify(hour_set, minute_set)),
+    DEG_TO_TRIGANGLE(degreeify(hour_rise, minute_rise))
   );
 
   // Capture the graphics context framebuffer
@@ -177,6 +162,64 @@ static void offscreen_layer_update(Layer* layer, GContext *ctx) {
 
   // Release the framebuffer now that we are free to modify it
   graphics_release_frame_buffer(ctx, framebuffer);
+}
+
+static void prayer_layer_update(Layer *layer, GContext *ctx) {
+  const GRect time_orbit = GRect(10, 10, 160, 160);
+
+  int hour_rise = 7;
+  int minute_rise = 13;
+  int hour_set = 18;
+  int minute_set = 40;
+
+  int degree_rise = degreeify(hour_rise, minute_rise);
+  int degree_set = degreeify(hour_set, minute_set);
+
+  int hour_fajr = 6;
+  int minute_fajr = 0;
+  int hour_dhuhr = 12;
+  int minute_dhuhr = 56;
+  int hour_asr = 16;
+  int minute_asr = 11;
+  int hour_maghrib = 18;
+  int minute_maghrib = 46;
+  int hour_isha = 19;
+  int minute_isha = 53;
+
+  int degrees[5] = {
+    degreeify(hour_fajr, minute_fajr),
+    degreeify(hour_dhuhr, minute_dhuhr),
+    degreeify(hour_asr, minute_asr),
+    degreeify(hour_maghrib, minute_maghrib),
+    degreeify(hour_isha, minute_isha)
+  };
+
+  int i;
+  for (i = 0; i < 5; i++) {
+    graphics_context_set_fill_color(
+      ctx,
+      degrees[i] >= degree_set && degrees[i] <= degree_rise ? GColorOxfordBlue : GColorVividCerulean
+    );
+
+    const GRect space = grect_centered_from_polar(
+      time_orbit,
+      GOvalScaleModeFitCircle,
+      DEG_TO_TRIGANGLE(degrees[i]),
+      GSize(6, 6)
+    );
+
+    graphics_fill_radial(
+      ctx, space, 
+      GOvalScaleModeFillCircle,
+      3,
+      DEG_TO_TRIGANGLE(0),
+      TRIG_MAX_ANGLE
+    ); 
+  }
+
+  graphics_context_set_fill_color(ctx, GColorOxfordBlue);
+  
+   
 }
 
 static void ring_layer_update(Layer *layer, GContext *ctx) {
@@ -192,13 +235,9 @@ static void ring_layer_update(Layer *layer, GContext *ctx) {
   int hour_set = 18;
   int minute_set = 40;
 
-  int diff_icon = ((hour * 60) + minute) * 360 / 1440;
-  int diff_rise = ((hour_rise * 60) + minute_rise) * 360 / 1440;
-  int diff_set = ((hour_set * 60) + minute_set) * 360 / 1440;
-
-  int degree_icon = (diff_icon + 180) % 360;
-  int degree_rise = (diff_rise + 180) % 360;
-  int degree_set = (diff_set + 180) % 360;
+  int degree_icon = degreeify(hour, minute);
+  int degree_rise = degreeify(hour_rise, minute_rise);
+  int degree_set = degreeify(hour_set, minute_set);
   
   GBitmap *icon = degree_icon >= degree_set && degree_icon <= degree_rise ? moon : sun;
 
@@ -235,6 +274,9 @@ static void main_window_load(Window *window) {
   bitmap_layer_set_bitmap(night_layer, stars);
   bitmap_layer_set_compositing_mode(night_layer, GCompOpSet);
 
+  prayer_layer = layer_create(GRect(0, 0, 180, 180));
+  layer_set_update_proc(prayer_layer, prayer_layer_update);
+
   sun = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_SUN);
   moon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MOON);
   ring_layer = layer_create(GRect(0, 0, 180, 180));
@@ -252,12 +294,14 @@ static void main_window_load(Window *window) {
   layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(night_layer));
   layer_add_child(window_get_root_layer(window), text_layer_get_layer(time_layer));
   layer_add_child(window_get_root_layer(window), ring_layer);
+  layer_add_child(window_get_root_layer(window), prayer_layer);
 }
 static void main_window_unload(Window *window) {
   layer_destroy(offscreen_layer);
   layer_destroy(sun_layer);
   bitmap_layer_destroy(night_layer);
   text_layer_destroy(time_layer);
+  layer_destroy(prayer_layer);
   layer_destroy(ring_layer);
   gbitmap_destroy(stars);
   gbitmap_destroy(sun);
@@ -336,16 +380,16 @@ static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
 
 static void init() {
   // Create main Window element and assign to pointer
-  s_main_window = window_create();
+  main_window = window_create();
 
   // Set handlers to manage the elements inside the Window
-  window_set_window_handlers(s_main_window, (WindowHandlers) {
+  window_set_window_handlers(main_window, (WindowHandlers) {
     .load = main_window_load,
     .unload = main_window_unload
   });
 
   // Show the Window on the watch, with animated=true
-  window_stack_push(s_main_window, true);
+  window_stack_push(main_window, true);
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
 
   // Register callbacks
@@ -365,7 +409,7 @@ static void init() {
 
 static void deinit() {
   // Destroy Window
-  window_destroy(s_main_window);
+  window_destroy(main_window);
 }
 
 int main(void) {
