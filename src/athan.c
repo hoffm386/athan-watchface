@@ -16,7 +16,6 @@ static GBitmap *moon;
 bool loaded_prayers;
 bool loaded_sun_data;
 
-int second;
 int minute;
 int hour;
 
@@ -57,7 +56,6 @@ static void update_time() {
   time_t temp = time(NULL); 
   struct tm *tick_time = localtime(&temp);
   
-  second = tick_time->tm_sec;
   minute = tick_time->tm_min;
   hour = tick_time->tm_hour;
 
@@ -68,8 +66,6 @@ static void update_time() {
     (hour == hour_isha && minute == minute_isha)) {
     vibes_long_pulse();
   }
-
-  
 
   // Create a long-lived buffer
   static char buffer[] = "00:00";
