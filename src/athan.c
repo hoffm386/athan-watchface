@@ -4,6 +4,7 @@ static Window *s_main_window;
 static Layer *offscreen_layer;
 static Layer *sun_layer;
 static BitmapLayer *night_layer;
+static TextLayer *time_layer;
 static Layer *ring_layer;
 static GBitmap *stars;
 static GBitmap *sun;
@@ -26,7 +27,21 @@ static void update_time() {
   second = tick_time->tm_sec;
   minute = tick_time->tm_min;
   hour = tick_time->tm_hour;
-  
+
+  // Create a long-lived buffer
+  static char buffer[] = "00:00";
+
+  // Write the current hours and minutes into the buffer
+  if(clock_is_24h_style() == true) {
+    // Use 24 hour format
+    strftime(buffer, sizeof("00:00"), "%H:%M", tick_time);
+  } else {
+    // Use 12 hour format
+    strftime(buffer, sizeof("00:00"), "%I:%M", tick_time);
+  }
+
+  // Display this time on the TextLayer
+  text_layer_set_text(time_layer, buffer);
   layer_mark_dirty(ring_layer);
 }
 
@@ -191,13 +206,9 @@ static void ring_layer_update(Layer *layer, GContext *ctx) {
     GSize(18, 18)
   );
 
-  graphics_draw_bitmap_in_rect(
-    ctx,
-    icon,
-    icon_space
-  );
+  graphics_context_set_compositing_mode(ctx, GCompOpSet);
+  graphics_draw_bitmap_in_rect(ctx, icon, icon_space);
 }
-
 
 
 
@@ -221,21 +232,29 @@ static void main_window_load(Window *window) {
   bitmap_layer_set_bitmap(night_layer, stars);
   bitmap_layer_set_compositing_mode(night_layer, GCompOpSet);
 
-
   sun = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_SUN);
   moon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MOON);
   ring_layer = layer_create(GRect(0, 0, 180, 180));
   layer_set_update_proc(ring_layer, ring_layer_update);
+  
+  time_layer = text_layer_create(GRect(62, 130, 56, 25));
+  text_layer_set_background_color(time_layer, GColorOxfordBlue);
+  text_layer_set_text_color(time_layer, GColorWhite);
+  text_layer_set_text(time_layer, "00:00");
+  text_layer_set_font(time_layer, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+  text_layer_set_text_alignment(time_layer, GTextAlignmentCenter);
 
   layer_add_child(window_get_root_layer(window), offscreen_layer);
   layer_add_child(window_get_root_layer(window), sun_layer);
   layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(night_layer));
+  layer_add_child(window_get_root_layer(window), text_layer_get_layer(time_layer));
   layer_add_child(window_get_root_layer(window), ring_layer);
 }
 static void main_window_unload(Window *window) {
   layer_destroy(offscreen_layer);
   layer_destroy(sun_layer);
   bitmap_layer_destroy(night_layer);
+  text_layer_destroy(time_layer);
   layer_destroy(ring_layer);
   gbitmap_destroy(stars);
   gbitmap_destroy(sun);
