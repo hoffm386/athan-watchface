@@ -25,12 +25,32 @@ int minute_rise;
 int hour_set;
 int minute_set;
 
+int hour_fajr;
+int minute_fajr;
+int hour_dhuhr;
+int minute_dhuhr;
+int hour_asr;
+int minute_asr;
+int hour_maghrib;
+int minute_maghrib;
+int hour_isha;
+int minute_isha;
+
 enum {
   KEY_SUNRISE_HOUR = 0,
   KEY_SUNRISE_MINUTE = 1,
   KEY_SUNSET_HOUR = 2,
   KEY_SUNSET_MINUTE = 3,
-  KEY_PRAYER_TIMES = 4
+  KEY_FAJR_HOUR = 4, 
+  KEY_FAJR_MINUTE = 5,
+  KEY_DHUHR_HOUR = 6, 
+  KEY_DHUHR_MINUTE = 7,
+  KEY_ASR_HOUR = 8, 
+  KEY_ASR_MINUTE = 9,
+  KEY_MAGHRIB_HOUR = 10, 
+  KEY_MAGHRIB_MINUTE = 11,
+  KEY_ISHA_HOUR = 12, 
+  KEY_ISHA_MINUTE = 13
 };
 
 static void update_time() {
@@ -40,17 +60,6 @@ static void update_time() {
   second = tick_time->tm_sec;
   minute = tick_time->tm_min;
   hour = tick_time->tm_hour;
-
-  int hour_fajr = 6;
-  int minute_fajr = 0;
-  int hour_dhuhr = 12;
-  int minute_dhuhr = 56;
-  int hour_asr = 16;
-  int minute_asr = 11;
-  int hour_maghrib = 18;
-  int minute_maghrib = 46;
-  int hour_isha = 22;
-  int minute_isha = 45;
 
   if ( (hour == hour_fajr && minute == minute_fajr) ||
     (hour == hour_dhuhr && minute == minute_dhuhr) ||
@@ -198,17 +207,6 @@ static void prayer_layer_update(Layer *layer, GContext *ctx) {
 
     int degree_rise = degreeify(hour_rise, minute_rise);
     int degree_set = degreeify(hour_set, minute_set);
-
-    int hour_fajr = 6;
-    int minute_fajr = 0;
-    int hour_dhuhr = 12;
-    int minute_dhuhr = 56;
-    int hour_asr = 16;
-    int minute_asr = 11;
-    int hour_maghrib = 18;
-    int minute_maghrib = 46;
-    int hour_isha = 22;
-    int minute_isha = 45;
 
     int degrees[5] = {
       degreeify(hour_fajr, minute_fajr),
@@ -367,8 +365,54 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
         APP_LOG(APP_LOG_LEVEL_INFO, "C code received sunset hour %d", minute_set);
         loaded_sun_data = true;
         break;
-      case KEY_PRAYER_TIMES:
-        APP_LOG(APP_LOG_LEVEL_INFO, "C code received prayer times %s", t->value->cstring);
+      case KEY_FAJR_HOUR:
+        hour_fajr = (int)t->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received fajr hour %d", hour_fajr);
+        loaded_prayers = true;
+        break;
+      case KEY_FAJR_MINUTE:
+        minute_fajr = (int)t->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received fajr minute %d", minute_fajr);
+        loaded_prayers = true;
+        break;
+      case KEY_DHUHR_HOUR:
+        hour_dhuhr = (int)t->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received dhuhr hour %d", hour_dhuhr);
+        loaded_prayers = true;
+        break;
+      case KEY_DHUHR_MINUTE:
+        minute_dhuhr = (int)t->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received dhuhr minute %d", minute_dhuhr);
+        loaded_prayers = true;
+        break;
+      case KEY_ASR_HOUR:
+        hour_asr = (int)t->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received asr hour %d", hour_asr);
+        loaded_prayers = true;
+        break;
+      case KEY_ASR_MINUTE:
+        minute_asr = (int)t->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received asr minute %d", minute_asr);
+        loaded_prayers = true;
+        break;
+      case KEY_MAGHRIB_HOUR:
+        hour_maghrib = (int)t->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received maghrib hour %d", hour_maghrib);
+        loaded_prayers = true;
+        break;
+      case KEY_MAGHRIB_MINUTE:
+        minute_maghrib = (int)t->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received maghrib minute %d", minute_maghrib);
+        loaded_prayers = true;
+        break;
+      case KEY_ISHA_HOUR:
+        hour_isha = (int)t->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received isha hour %d", hour_isha);
+        loaded_prayers = true;
+        break;
+      case KEY_ISHA_MINUTE:
+        minute_isha = (int)t->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "C code received isha minute %d", minute_isha);
         loaded_prayers = true;
         break;
       default:

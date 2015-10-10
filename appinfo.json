@@ -14,7 +14,16 @@
     "KEY_SUNRISE_MINUTE": 1,
     "KEY_SUNSET_HOUR": 2,
     "KEY_SUNSET_MINUTE": 3,
-    "KEY_PRAYER_TIMES": 4
+    "KEY_FAJR_HOUR": 4, 
+    "KEY_FAJR_MINUTE": 5,
+    "KEY_DHUHR_HOUR": 6, 
+    "KEY_DHUHR_MINUTE": 7,
+    "KEY_ASR_HOUR": 8, 
+    "KEY_ASR_MINUTE": 9,
+    "KEY_MAGHRIB_HOUR": 10, 
+    "KEY_MAGHRIB_MINUTE": 11,
+    "KEY_ISHA_HOUR": 12, 
+    "KEY_ISHA_MINUTE": 13
   },
   "resources": {
     "media": [
